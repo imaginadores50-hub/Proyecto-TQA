@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Simulador de torre de enfriamiento a contraflujo – Avance v1</title>
+<!--
+  Simulador de torre de enfriamiento a contraflujo
+  Curso: Termodinámica Química Aplicada (I5819) · CUCEI · Universidad de Guadalajara · ciclo 2026B
+  Equipo [2]
+  Integrantes [ANGELA DE LEON RUIZ, MANUEL FERNANDO DEL CARMEN GARCIA]
+  Fecha [12/11/26]
+  Versión [Avance v1]
+  Herramientas de IA utilizadas: Claude (Anthropic)
+  Archivo autocontenido: sin CDN, sin librerías, abre sin conexión.
+  Numeración de ecuaciones (1)–(13) = especificación técnica v1 = panel de documentación.
+-->
+<style>
+:root{color-scheme:light;--bg:#f6f8f9;--pn:#fff;--fg:#1d2b33;--mu:#5b6b75;--bd:#d5dee3;--ac:#17766b;--hot:#c8402a;--cold:#1f7bb8;--air:#7a62b8;--wr:#8a5a00;--wb:#fff4d6;--er:#a3202b;--eb:#fde4e6}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.45 "Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+header{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding:14px 20px;background:var(--pn);border-bottom:1px solid var(--bd)}
+h1{font-size:19px;margin:0}header small{color:var(--mu)}
+main{max-width:1180px;margin:0 auto;padding:16px}
+.pn{background:var(--pn);border:1px solid var(--bd);border-radius:6px;padding:14px;margin-bottom:14px}
+h2{font-size:15px;margin:0 0 10px}
+.seg button{border:1px solid var(--ac);background:var(--pn);color:var(--ac);padding:5px 14px;cursor:pointer;font:inherit}
+.seg button:first-child{border-radius:5px 0 0 5px}.seg button:last-child{border-radius:0 5px 5px 0;border-left:0}
+.seg button.on{background:var(--ac);color:var(--pn)}
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:2px solid var(--ac);outline-offset:2px}
+#ctl{display:grid;grid-template-columns:repeat(auto-fit,minmax(330px,1fr));gap:10px 28px}
+.r{display:grid;grid-template-columns:150px 1fr 82px 52px;gap:8px;align-items:center}
+.r label{color:var(--mu)}.r input[type=number]{width:100%;padding:3px 4px;border:1px solid var(--bd);border-radius:4px;background:var(--pn);color:var(--fg);font:inherit}
+.r span{font-size:12px;color:var(--mu)}.r input[type=range]{width:100%;accent-color:var(--ac)}
+#warn div{padding:7px 10px;border-radius:5px;margin-bottom:6px;font-size:13px}
+.w{background:var(--wb);color:var(--wr)}.e{background:var(--eb);color:var(--er)}.ok{background:transparent;color:var(--air)}
+.g2{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:14px}
+svg text{font-family:inherit;fill:var(--fg)}svg .mu{fill:var(--mu)}
+#cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.cd{border:1px solid var(--bd);border-radius:6px;padding:8px 10px}.cd p{margin:0;font-size:12px;color:var(--mu)}
+.cd b{font-size:18px;font-variant-numeric:tabular-nums;font-weight:600}.cd i{font-style:normal;font-size:12px;color:var(--mu)}
+table{border-collapse:collapse;width:100%}th,td{border-bottom:1px solid var(--bd);padding:5px 8px;text-align:right;font-variant-numeric:tabular-nums}
+th{color:var(--mu);font-weight:600}th:first-child,td:first-child{text-align:left}
+details{border-top:1px solid var(--bd);padding:8px 0}summary{cursor:pointer;font-weight:600}
+pre{white-space:pre-wrap;margin:8px 0;font:13px/1.5 Consolas,Menlo,monospace}
+#att td{text-align:left;height:30px;border:1px solid var(--bd)}
+.top{display:block;background:#eaf3f1;color:var(--fg);padding:18px 24px 14px;border:0;border-bottom:3px solid var(--ac)}
+.top .brand{font-size:12px;letter-spacing:.04em;color:var(--ac);font-weight:600}.top h1{font-size:22px;margin:2px 0}.top .sub{margin:0 0 10px;color:var(--mu)}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center}.tag,.ver{font-size:12px;background:#d3e6e2;color:#0f4f47;padding:3px 10px;border-radius:12px}
+.btn{border:1px solid var(--ac);background:var(--pn);color:var(--ac);padding:5px 14px;border-radius:5px;cursor:pointer;font:inherit}
+.tabs{display:flex;gap:4px;padding:0 16px;background:var(--pn);border-bottom:1px solid var(--bd)}
+.tab{border:0;border-bottom:3px solid transparent;background:none;color:var(--mu);padding:10px 14px;cursor:pointer;font:inherit}.tab.on{color:var(--ac);border-color:var(--ac);font-weight:600}
+.dd{background:var(--pn);border:1px solid var(--bd);border-radius:6px;padding:10px 14px;margin-bottom:14px}.dd summary{list-style:none;display:flex;justify-content:space-between}
+.dd summary::after{content:"DESPLEGAR";font-size:11px;color:var(--mu)}.dd[open] summary::after{content:"CONTRAER"}.dd p{margin:8px 0 0}
+dialog{max-width:520px;background:var(--pn);color:var(--fg);border:1px solid var(--bd);border-radius:8px}dialog::backdrop{background:rgba(0,0,0,.5)}
+</style></head><body>
+<header class="top"><div class="brand">Termo · IA · Dinámica</div>
+<h1>Proyecto Integrador · Torre de enfriamiento a contraflujo</h1>
+<p class="sub">Balances de masa y energía en un volumen de control · Aire húmedo y agua</p>
+<div class="bar"><span class="tag">💧 Simulador · Esquema · Diagrama h–T</span>
+<div class="seg" role="group" aria-label="Sistema de unidades"><button id="bSI" class="on">SI</button><button id="bEN">Inglés</button></div>
+<span class="ver">Avance v1 · SVG</span><button id="bHelp" class="btn">Ayuda</button></div></header>
+<nav class="tabs"><button class="tab on" data-p="sim">🌡️ Simulador</button><button class="tab" data-p="doc">📖 Documentación</button></nav>
+<main><div id="p_sim">
+<details class="dd" open><summary>Descripción</summary><p>En una torre a contraflujo el agua caliente (3) cae sobre el relleno mientras el aire (1) asciende. Parte del agua se evapora hacia el aire, que sale saturado (2), y el resto se enfría (4). Con el volumen de control en la torre completa, estacionaria y adiabática, el balance de energía (7) fija la entalpía de salida del aire y el balance de masa (6) el agua evaporada; el aire de salida saturado (9) determina T₂ y ω₂. Modifique cualquier entrada: todo se recalcula al instante.</p></details>
+<section class="pn"><h2>Datos de entrada</h2><div id="ctl"></div></section>
+<div id="warn" aria-live="polite"></div>
+<section class="g2">
+ <div class="pn"><h2>Esquema de la torre</h2><svg id="tower" viewBox="0 0 400 430" width="100%" role="img" aria-label="Esquema de la torre"></svg></div>
+ <div class="pn"><h2>Diagrama h–T</h2><svg id="chart" viewBox="0 0 400 330" width="100%" role="img" aria-label="Diagrama entalpía del aire contra temperatura del agua"></svg></div>
+</section>
+<section class="pn"><h2>Estado resuelto</h2><div id="cards"></div><p><button id="bVer" class="btn">Verificar</button></p><div id="ver" style="overflow-x:auto"></div></section>
+<section class="pn"><h2>Tabla de estados</h2><div style="overflow-x:auto"><table id="tbl"></table></div></section>
+</div><div id="p_doc" hidden><section class="pn" id="doc"><h2>Documentación</h2>
+<details open><summary>Ecuaciones (1)–(13)</summary><pre>
+(1)  P_sat(T): Magnus provisional (ver Fuentes)
+(2)  ω = 0.622·P_v / (P − P_v)
+(3)  h = 1.006·T + ω·(2501 + 1.86·T)            [kJ/kg a.s., T en °C]
+(4)  ω1 = [(2501 − 2.326·T_bh)·ω*_bh − 1.006·(T_bs − T_bh)] / [2501 + 1.86·T_bs − 4.186·T_bh]
+(5)  m_a = m3 / (L/G)
+(6)  m_E = m_a·(ω2 − ω1);   m4 = m3 − m_E
+(7)  m_a·h1 + m3·h_f3 = m_a·h2 + m4·h_f4
+(8)  h_f = c_pw·T,  c_pw = 4.186 kJ/(kg·K)
+(9)  ω2 = ω_s(T2,P);  h(T2, ω2) = h2  → T2 por bisección en [−5, 70] °C
+(10) Rango = T3 − T4
+(11) Aproximación = T4 − T_bh
+(12) ε = Rango / (Rango + Aproximación)
+(13) Q = m3·h_f3 − m4·h_f4 = m_a·(h2 − h1)</pre></details>
+<details><summary>Hipótesis y dominio de validez</summary><pre>
+Estacionario; torre adiabática; Ec y Ep despreciables; aire seco y vapor como gases ideales (Dalton);
+c_pw constante; aire de salida saturado; sin arrastre ni purga.
+Dominio: T3 30–55 °C, T4 15–45 °C (T4 &lt; T3), T_bs 10–45 °C, T_bh 5–30 °C (≤ T_bs), P 70–101.325 kPa,
+m3 10–100 kg/s, L/G 0.5–2.5. El diagrama h–T usa línea de operación recta (aproximación de Merkel).
+Con T4 ≤ T_bh, aproximación &lt; 2.5 K, T2 &gt; T3 o m_E &lt; 0 el modelo pierde sentido físico (se advierte).</pre></details>
+<details><summary>Fuentes</summary><pre>
+Ecs. (2), (3), (7), (8), (13) y balances: Çengel, Y. A. y Boles, M. A., Termodinámica, cap. "Mezclas de gas–vapor y
+  acondicionamiento de aire" (torres de enfriamiento). PENDIENTE_FUENTE: edición y página exactas.
+Ec. (4): relación de bulbo húmedo tipo ASHRAE. PENDIENTE_FUENTE: citar ASHRAE Handbook—Fundamentals (psicrometría), edición y página.
+Ec. (1): Magnus (constantes 0.61094 kPa, 17.625, 243.04 °C) provisional. PENDIENTE_FUENTE: reemplazar por IAPWS-IF97 o fuente citada.
+Conversiones: T(°F)=1.8·T(°C)+32; ΔT(°R)=1.8·K; 1 lbm=0.45359237 kg; 1 psi=6.894757 kPa;
+  1 Btu=1.055056 kJ (1 kJ/kg=0.4299 Btu/lbm); 1 kW=3412.14 Btu/h.</pre></details>
+<details><summary>Declaración de atribución de IA</summary>
+<table id="att"><tr><th>Componente</th><th>Generado por IA</th><th>Modificado por el equipo</th><th>Escrito por el equipo</th><th>Responsable de la revisión</th></tr>
+<tr><td>Modelo termodinámico y especificación</td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+<tr><td>Motor de cálculo</td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+<tr><td>Base de datos de propiedades</td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+<tr><td>Interfaz y controles</td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+<tr><td>Esquema dinámico</td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr>
+<tr><td>Reporte técnico</td><td contenteditable></td><td contenteditable></td><td contenteditable></td><td contenteditable></td></tr></table></details>
+</section></div></main>
+<dialog id="help"><h2>Ayuda · Torre de enfriamiento</h2><h3>¿Qué es esta aplicación?</h3><p>Simulador de una torre de enfriamiento a contraflujo: calcula estados, calor disipado, rango, aproximación, efectividad y agua evaporada, y los dibuja en el esquema y en el diagrama h–T.</p>
+<h3>Cómo se usa</h3><ol><li>Mueva los deslizadores o escriba valores en los campos numéricos.</li><li>Lea las advertencias: indican condiciones físicamente imposibles o fuera del dominio del modelo.</li><li>Cambie entre SI e Inglés en cualquier momento; el valor físico se conserva.</li><li>Pulse «Verificar» para comprobar el cierre de los balances.</li></ol>
+<h3>Sugerencia didáctica</h3><p>Antes de mover un control, prediga el sentido del cambio en Q, m_E y T₂; luego compruébelo.</p><p><button id="bClose" class="btn">Cerrar</button></p></dialog>
+<script>
+"use strict";
+// ===== Constantes (SI) =====
+var CPW=4.186;                       // Ec. (8) c_pw [kJ/(kg·K)]
+var LBM=0.45359237, BTU=1.055056, PSI=6.894757, KW_BTUH=3412.14;
+var APROX_MIN=2.5;                   // K, advertencia de tamaño impráctico
+// Entradas: k, rótulo, tipo de unidad, mínimo, máximo, valor por defecto (SI)
+var IN=[
+ {k:'T3',n:'T₃ agua caliente',t:'T',a:30,b:55,d:40},{k:'T4',n:'T₄ agua fría',t:'T',a:15,b:45,d:30},
+ {k:'Tbs',n:'T_bs bulbo seco',t:'T',a:10,b:45,d:30},{k:'Tbh',n:'T_bh bulbo húmedo',t:'T',a:5,b:30,d:22},
+ {k:'P',n:'P atmosférica',t:'P',a:70,b:101.325,d:81},{k:'m3',n:'m₃ flujo agua caliente',t:'m',a:10,b:100,d:50},
+ {k:'LG',n:'L/G (agua/aire seco)',t:'r',a:0.5,b:2.5,d:1.2}];
+// Unidades de visualización: f = SI→inglés, g = inglés→SI
+var UN={T:{si:'°C',en:'°F',f:function(v){return v*1.8+32},g:function(x){return (x-32)/1.8}},
+ dT:{si:'K',en:'°R',f:function(v){return v*1.8},g:function(x){return x/1.8}},
+ P:{si:'kPa',en:'psi',f:function(v){return v/PSI},g:function(x){return x*PSI}},
+ m:{si:'kg/s',en:'lbm/s',f:function(v){return v/LBM},g:function(x){return x*LBM}},
+ r:{si:'kg/kg',en:'lbm/lbm',f:function(v){return v},g:function(x){return x}},
+ w:{si:'kg/kg a.s.',en:'lbm/lbm a.s.',f:function(v){return v},g:function(x){return x}},
+ h:{si:'kJ/kg a.s.',en:'Btu/lbm a.s.',f:function(v){return v*LBM/BTU},g:function(x){return x*BTU/LBM}},
+ hw:{si:'kJ/kg agua',en:'Btu/lbm agua',f:function(v){return v*LBM/BTU},g:function(x){return x*BTU/LBM}},
+ Q:{si:'kW',en:'Btu/h',f:function(v){return v*KW_BTUH},g:function(x){return x/KW_BTUH}}};
+var units='SI', S={}, ctlMsg=[];
+IN.forEach(function(i){S[i.k]=i.d});
+
+// ===== Motor de cálculo =====
+function psat(T){return 0.61094*Math.exp(17.625*T/(T+243.04));}   // Ec. (1) PENDIENTE_FUENTE: reemplazar por IAPWS-IF97 o fuente citada
+function humRatio(Pv,P){return 0.622*Pv/(P-Pv);}                  // Ec. (2)
+function wSat(T,P){return humRatio(psat(T),P);}                   // Ec. (1)+(2)
+function hAir(T,w){return 1.006*T+w*(2501+1.86*T);}               // Ec. (3)
+function w1FromWetBulb(Tbs,Tbh,P){                                 // Ec. (4)
+  var wsb=wSat(Tbh,P);
+  return ((2501-2.326*Tbh)*wsb-1.006*(Tbs-Tbh))/(2501+1.86*Tbs-4.186*Tbh);}
+function hf(T){return CPW*T;}                                      // Ec. (8)
+function T2Bisection(h2,P){                                        // Ec. (9)
+  var lo=-5,hi=70,f=function(T){return hAir(T,wSat(T,P))-h2;};
+  if(f(lo)>0||f(hi)<0)return {T:NaN,ok:false};
+  for(var i=0;i<200&&hi-lo>1e-12;i++){var m=(lo+hi)/2;if(f(m)<0)lo=m;else hi=m;}
+  return {T:(lo+hi)/2,ok:true};}
+function solve(inp){
+  var s={},w={},k;for(k in S)s[k]=S[k];for(k in inp)s[k]=inp[k];
+  var T3=s.T3,T4=s.T4,Tbs=s.Tbs,Tbh=s.Tbh,P=s.P,m3=s.m3;
+  var w1=w1FromWetBulb(Tbs,Tbh,P), h1=hAir(Tbs,w1);                // Ec. (4),(3)
+  var ma=m3/s.LG;                                                  // Ec. (5)
+  var hf3=hf(T3),hf4=hf(T4),mE=0,h2=h1,T2=Tbs,w2=w1,it=0,ok=true,conv=false;
+  for(it=1;it<=100;it++){
+    h2=h1+(m3*hf3-(m3-mE)*hf4)/ma;                                 // Ec. (7) despejada, con Ec. (8)
+    var r=T2Bisection(h2,P);ok=r.ok;if(!ok)break;
+    T2=r.T;w2=wSat(T2,P);                                          // Ec. (9)
+    var nE=ma*(w2-w1);                                             // Ec. (6)
+    var rel=Math.abs(nE-mE)/Math.max(Math.abs(nE),1e-12);mE=nE;
+    if(rel<1e-8){conv=true;break;}}
+  var m4=m3-mE;                                                    // Ec. (6)
+  var Q=m3*hf3-m4*hf4;                                             // Ec. (13)
+  var rango=T3-T4, aprox=T4-Tbh, eps=rango/(rango+aprox);          // Ec. (10),(11),(12)
+  var res=Math.abs(ma*(h2-h1)-Q)/Math.abs(Q)*100;                  // residuo del balance, Ec. (13)
+  return {s:s,w1:w1,h1:h1,ma:ma,h2:h2,T2:T2,w2:w2,mE:mE,m4:m4,Q:Q,rango:rango,aprox:aprox,eps:eps,res:res,
+    hf3:hf3,hf4:hf4,it:it,conv:conv,ok:ok};}
+function warnings(R){
+  var a=[],s=R.s;
+  if(!R.ok){a.push(['e','No se encontró T₂ en [−5, 70] °C: h₂ fuera del intervalo de la bisección.']);return a;}
+  if(s.T4<=s.Tbh)a.push(['e','T₄ ≤ T_bh: físicamente imposible (aproximación no positiva).']);
+  else if(R.aprox<APROX_MIN)a.push(['w','Aproximación < 2.5 K: tamaño de torre impráctico.']);
+  if(R.T2>s.T3)a.push(['w','T₂ > T₃: condiciones incoherentes.']);
+  if(R.mE<0)a.push(['w','m_E < 0: condensación neta; la hipótesis de aire saturado no aplica.']);
+  if(R.res>0.1||!R.conv)a.push(['w','Residuo del balance > 0.1 % o iteración sin convergencia.']);
+  // Verificación adicional: la línea de operación no debe cruzar la curva saturada (fuerza motriz positiva)
+  for(var i=0;i<=40;i++){var T=s.T4+(s.T3-s.T4)*i/40,hl=R.h1+(R.h2-R.h1)*i/40;
+    if(hAir(T,wSat(T,s.P))<hl){a.push(['w','La línea de operación cruza la curva saturada: fuerza motriz negativa.']);break;}}
+  return a;}
+
+// ===== Unidades y formato =====
+function sv(t,x){return units==='SI'?x:UN[t].g(x);}   // pantalla → SI
+function cv(t,v){return units==='SI'?v:UN[t].f(v);}
+function un(t){return UN[t][units==='SI'?'si':'en'];}
+function fx(t,v,d){return cv(t,v).toFixed(d);}
+
+// ===== Controles =====
+function buildControls(){
+  var h='';IN.forEach(function(i){h+='<div class="r"><label for="n_'+i.k+'">'+i.n+'</label><input type="range" id="s_'+i.k+'" aria-label="'+i.n+'"><input type="number" id="n_'+i.k+'" step="any"><span id="u_'+i.k+'"></span></div>';});
+  document.getElementById('ctl').innerHTML=h;
+  IN.forEach(function(i){
+    var s=document.getElementById('s_'+i.k),n=document.getElementById('n_'+i.k);
+    s.addEventListener('input',function(){setInput(i.k,sv(i.t,parseFloat(s.value)),true);});
+    n.addEventListener('input',function(){var x=parseFloat(n.value);if(!isNaN(x)){var v=sv(i.t,x);if(v>=i.a-1e-9&&v<=i.b+1e-9)setInput(i.k,v,false);}});
+    n.addEventListener('change',function(){var x=parseFloat(n.value);if(!isNaN(x))setInput(i.k,sv(i.t,x),true);else syncControls();});});
+  syncControls();}
+function syncControls(){
+  IN.forEach(function(i){
+    var s=document.getElementById('s_'+i.k),n=document.getElementById('n_'+i.k),f=function(v){return units==='SI'?v:UN[i.t].f(v);};
+    var lo=f(i.a),hi=f(i.b);s.min=lo;s.max=hi;s.step=(hi-lo)/500;s.value=f(S[i.k]);
+    n.min=lo;n.max=hi;if(document.activeElement!==n)n.value=+f(S[i.k]).toFixed(i.t==='P'?(units==='SI'?3:2):i.k==='LG'?2:1);
+    document.getElementById('u_'+i.k).textContent=un(i.t);});}
+function setInput(k,v,fromSlider){
+  ctlMsg=[];var d=IN.filter(function(i){return i.k===k})[0];
+  if(v<d.a||v>d.b){v=Math.min(d.b,Math.max(d.a,v));ctlMsg.push('Valor fuera de rango: se ajustó el límite de '+d.n+'.');}
+  S[k]=v;
+  if(S.T4>=S.T3){ // rechazo: se corrige el control que se acaba de mover
+    if(k==='T3'){S.T3=Math.min(55,S.T4+0.1);}else{S.T4=S.T3-0.1;}
+    ctlMsg.push('T₄ debe ser menor que T₃: se corrigió '+(k==='T3'?'T₃':'T₄')+'.');}
+  if(S.Tbh>S.Tbs){ if(k==='Tbs')S.Tbs=S.Tbh;else S.Tbh=S.Tbs;
+    ctlMsg.push('T_bh no puede superar a T_bs: se corrigió '+(k==='Tbs'?'T_bs':'T_bh')+'.');}
+  syncControls();update();}
+
+// ===== Salidas =====
+function card(l,v,u,x){return '<div class="cd"><p>'+l+'</p><b>'+v+'</b> <i>'+u+'</i>'+(x?'<br><i>'+x+'</i>':'')+'</div>';}
+function renderResults(R){
+  var s=R.s,W=warnings(R),h='';
+  if(!R.ok){document.getElementById('cards').innerHTML='';document.getElementById('tbl').innerHTML='';}
+  ctlMsg.forEach(function(m){h+='<div class="e">'+m+'</div>';});
+  W.forEach(function(w){h+='<div class="'+w[0]+'">'+w[1]+'</div>';});
+  if(!ctlMsg.length&&!W.length)h='<div class="ok">Entradas válidas; sin advertencias.</div>';
+  document.getElementById('warn').innerHTML=h;
+  if(!R.ok)return;
+  var c='';
+  c+=card('Calor disipado Q',Math.round(cv('Q',R.Q)).toLocaleString('en-US'),un('Q'));
+  c+=card('Rango',fx('dT',R.rango,1),un('dT'));
+  c+=card('Aproximación',fx('dT',R.aprox,1),un('dT'));
+  c+=card('Efectividad ε',(R.eps*100).toFixed(1),'%');
+  c+=card('Agua evaporada m_E',fx('m',R.mE,3),un('m'),(R.mE/s.m3*100).toFixed(2)+' % de m₃');
+  c+=card('Flujo de aire seco m_a',fx('m',R.ma,1),un('m'));
+  c+=card('Residuo del balance',R.res.toExponential(2),'%','iteraciones: '+R.it);
+  document.getElementById('cards').innerHTML=c;
+  var row=function(n,T,w,hh,t){return '<tr><td>'+n+'</td><td>'+fx('T',T,2)+' '+un('T')+'</td><td>'+(w===null?'—':w.toFixed(5)+' '+un('w'))+'</td><td>'+fx(t,hh,2)+' '+un(t)+'</td></tr>';};
+  document.getElementById('tbl').innerHTML='<tr><th>Estado</th><th>T</th><th>ω</th><th>h</th></tr>'+
+   row('1 · Aire de entrada',s.Tbs,R.w1,R.h1,'h')+row('2 · Aire de salida (saturado)',R.T2,R.w2,R.h2,'h')+
+   row('3 · Agua caliente (entra)',s.T3,null,R.hf3,'hw')+row('4 · Agua fría (sale)',s.T4,null,R.hf4,'hw');}
+
+// Esquema de la torre (SVG); grosor de flecha ∝ √(flujo/flujo_máx), con mínimo visible
+function arrow(x1,y1,x2,y2,v,vmax,c){var w=2+9*Math.sqrt(Math.min(Math.max(v,0)/vmax,1));
+  return '<line x1="'+x1+'" y1="'+y1+'" x2="'+x2+'" y2="'+y2+'" stroke="var(--'+c+')" stroke-width="'+w.toFixed(1)+'" marker-end="url(#a_'+c+')"/>';}
+function txt(x,y,L,anc,cl){return L.map(function(l,i){return '<text x="'+x+'" y="'+(y+i*12)+'" font-size="10.5" text-anchor="'+(anc||'start')+'"'+(cl?' class="'+cl+'"':'')+'>'+l+'</text>';}).join('');}
+function drawTower(R){
+  var s=R.s,o='<defs>';['hot','cold','air'].forEach(function(c){o+='<marker id="a_'+c+'" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="2.4" markerHeight="2.4" orient="auto"><path d="M0 0L10 5L0 10z" fill="var(--'+c+')"/></marker>';});
+  o+='</defs>';
+  o+='<rect x="130" y="110" width="140" height="230" fill="none" stroke="var(--mu)" stroke-width="2"/>';
+  o+='<rect x="165" y="68" width="70" height="42" fill="none" stroke="var(--mu)" stroke-width="2"/>';
+  o+='<ellipse cx="200" cy="82" rx="26" ry="5" fill="none" stroke="var(--fg)"/><line x1="200" y1="72" x2="200" y2="92" stroke="var(--fg)"/>';
+  for(var y=170;y<=280;y+=12)o+='<path d="M132 '+y+'L268 '+(y+10)+'M268 '+y+'L132 '+(y+10)+'" stroke="var(--mu)" stroke-width=".8" fill="none" opacity=".55"/>';
+  o+='<line x1="140" y1="132" x2="260" y2="132" stroke="var(--cold)" stroke-dasharray="2 6" stroke-width="3"/>';
+  o+='<rect x="110" y="340" width="180" height="44" fill="var(--cold)" opacity=".22" stroke="var(--cold)"/>';
+  o+=txt(200,166,['Relleno'],'middle','mu')+txt(200,364,['Balsa'],'middle','mu')+txt(200,62,['Ventilador'],'middle','mu');
+  o+=arrow(18,126,128,126,s.m3,100,'hot')+txt(8,96,['3 · Agua caliente','T = '+fx('T',s.T3,1)+' '+un('T'),'m = '+fx('m',s.m3,1)+' '+un('m')]);
+  o+=arrow(18,270,128,270,R.ma,200,'air')+arrow(382,270,272,270,R.ma,200,'air')+txt(8,300,['1 · Aire entrada','T = '+fx('T',s.Tbs,1)+' '+un('T'),'ω = '+R.w1.toFixed(4)+' '+un('w'),'m_a = '+fx('m',R.ma,1)+' '+un('m')]);
+  o+=arrow(200,66,200,12,R.ma,200,'air')+txt(222,22,['2 · Aire salida (sat.)','T = '+fx('T',R.T2,1)+' '+un('T'),'ω = '+R.w2.toFixed(4)+' '+un('w')]);
+  o+=arrow(292,372,388,372,R.m4,100,'cold')+txt(296,396,['4 · Agua fría','T = '+fx('T',s.T4,1)+' '+un('T'),'m = '+fx('m',R.m4,1)+' '+un('m')]);
+  o+=arrow(18,368,108,368,Math.abs(R.mE),5,'cold')+txt(8,398,['Reposición','m_E = '+fx('m',R.mE,3)+' '+un('m')]);
+  document.getElementById('tower').innerHTML=o;}
+
+// Diagrama h–T: h_s(T) del aire saturado, línea de operación (T4,h1)–(T3,h2), fuerza motriz vertical
+function drawChart(R){
+  var s=R.s,x0=Math.floor(Math.min(s.T4,s.Tbh)-3),x1=Math.ceil(s.T3+3);
+  var hs=function(T){return hAir(T,wSat(T,s.P));};
+  var y0=Math.floor(Math.min(R.h1,hs(x0))/10)*10-5,y1=Math.ceil(Math.max(hs(x1),R.h2)/10)*10+5;
+  var L=58,Rr=388,Tp=14,B=278,X=function(T){return L+(T-x0)/(x1-x0)*(Rr-L);},Y=function(h){return B-(h-y0)/(y1-y0)*(B-Tp);};
+  var o='<rect x="'+L+'" y="'+Tp+'" width="'+(Rr-L)+'" height="'+(B-Tp)+'" fill="none" stroke="var(--bd)"/>',i;
+  for(i=0;i<=5;i++){var T=x0+(x1-x0)*i/5,h=y0+(y1-y0)*i/5;
+    o+='<line x1="'+X(T)+'" y1="'+B+'" x2="'+X(T)+'" y2="'+(B+4)+'" stroke="var(--mu)"/>'+txt(X(T),B+16,[fx('T',T,0)],'middle','mu');
+    o+='<line x1="'+(L-4)+'" y1="'+Y(h)+'" x2="'+L+'" y2="'+Y(h)+'" stroke="var(--mu)"/>'+txt(L-7,Y(h)+3,[fx('h',h,0)],'end','mu');
+    if(i&&i<5)o+='<line x1="'+L+'" y1="'+Y(h)+'" x2="'+Rr+'" y2="'+Y(h)+'" stroke="var(--bd)" stroke-dasharray="1 4"/>';}
+  var p='';for(i=0;i<=60;i++){var t=x0+(x1-x0)*i/60;p+=(i?'L':'M')+X(t).toFixed(1)+' '+Y(hs(t)).toFixed(1);}
+  o+='<path d="'+p+'" fill="none" stroke="var(--air)" stroke-width="2.2"/>';
+  o+='<line x1="'+X(s.T4)+'" y1="'+Y(R.h1)+'" x2="'+X(s.T3)+'" y2="'+Y(R.h2)+'" stroke="var(--hot)" stroke-width="2.2"/>';
+  [[s.T4,R.h1],[s.T3,R.h2]].forEach(function(q){
+    o+='<line x1="'+X(q[0])+'" y1="'+Y(q[1])+'" x2="'+X(q[0])+'" y2="'+Y(hs(q[0]))+'" stroke="var(--fg)" stroke-dasharray="4 3"/>';
+    o+='<circle cx="'+X(q[0])+'" cy="'+Y(q[1])+'" r="4" fill="var(--hot)"/><circle cx="'+X(q[0])+'" cy="'+Y(hs(q[0]))+'" r="3.5" fill="var(--air)"/>';});
+  o+=txt(X(s.T4)+6,Y(R.h1)+14,['(T₄, h₁)'])+txt(X(s.T3)-6,Y(R.h2)-8,['(T₃, h₂)'],'end');
+  o+=txt(X(x0+(x1-x0)*.2),Y(hs(x0+(x1-x0)*.2))-14,['h_s(T) aire saturado'],'start')+txt(X(s.T4)+((X(s.T3)-X(s.T4))/2)+8,Y((R.h1+R.h2)/2)+16,['Línea de operación']);
+  o+=txt((L+Rr)/2,B+34,['Temperatura del agua T ('+un('T')+')'],'middle','mu')+'<text transform="translate(12,'+((B+Tp)/2)+') rotate(-90)" font-size="10.5" text-anchor="middle" class="mu">Entalpía del aire h ('+un('h')+')</text>';
+  document.getElementById('chart').innerHTML=o;}
+function update(){var R=solve({});renderResults(R);if(R.ok){drawTower(R);drawChart(R);}document.getElementById('ver').innerHTML='';}
+// Verificación de cierre: balances de energía (lado agua y lado aire) y de masa de agua
+function verify(){var R=solve({}),s=R.s;if(!R.ok)return;
+  var Qw=s.m3*R.hf3-R.m4*R.hf4,Qa=R.ma*(R.h2-R.h1),dm=(s.m3+R.ma*R.w1)-(R.m4+R.ma*R.w2);
+  var r=function(a,b,c){return '<tr><td>'+a+'</td><td>'+b+'</td><td>'+c+'</td></tr>';};
+  document.getElementById('ver').innerHTML='<table><tr><th>Balance</th><th>Valor</th><th>Resultado</th></tr>'+
+   r('Q lado agua = m₃·h_f3 − m₄·h_f4 (Ec. 13)',Math.round(cv('Q',Qw)).toLocaleString('en-US')+' '+un('Q'),'')+
+   r('Q lado aire = m_a·(h₂ − h₁) (Ec. 13)',Math.round(cv('Q',Qa)).toLocaleString('en-US')+' '+un('Q'),'')+
+   r('Residuo de energía',(Math.abs(Qa-Qw)/Math.abs(Qw)*100).toExponential(2)+' %',Math.abs(Qa-Qw)/Math.abs(Qw)*100<=0.1?'✔ cierra':'✘ no cierra')+
+   r('Masa de agua: entra − sale',fx('m',dm,6)+' '+un('m'),Math.abs(dm)<1e-9*s.m3?'✔ cierra':'✘ no cierra')+'</table>';}
+
+// ===== Pruebas: runTests() desde la consola =====
+// Plantilla {descripcion, entradas, valor_esperado, tolerancia_%}; "variable" indica la salida a comparar (p. ej. 'Q','mE','T2').
+var CASOS=[
+ {descripcion:'',entradas:{},variable:'',valor_esperado:null,tolerancia_pct:2},
+ {descripcion:'',entradas:{},variable:'',valor_esperado:null,tolerancia_pct:2},
+ {descripcion:'',entradas:{},variable:'',valor_esperado:null,tolerancia_pct:2}];
+function runTests(){
+  var out=CASOS.map(function(c,i){
+    if(c.valor_esperado===null||!c.variable)return {caso:i+1,descripcion:c.descripcion||'(vacío)',estado:'VACÍO'};
+    var R=solve(c.entradas),v=R[c.variable],err=Math.abs(v-c.valor_esperado)/Math.abs(c.valor_esperado)*100;
+    return {caso:i+1,descripcion:c.descripcion,variable:c.variable,calculado:v,esperado:c.valor_esperado,error_pct:err,estado:err<=c.tolerancia_pct?'OK':'FALLA'};});
+  console.table(out);return out;}
+
+// ===== Arranque =====
+['SI','EN'].forEach(function(u){document.getElementById('b'+u).addEventListener('click',function(){
+  units=u==='SI'?'SI':'EN';document.getElementById('bSI').className=units==='SI'?'on':'';document.getElementById('bEN').className=units==='EN'?'on':'';
+  syncControls();update();});});
+document.querySelectorAll('.tab').forEach(function(b){b.addEventListener('click',function(){
+  document.querySelectorAll('.tab').forEach(function(x){x.className='tab'+(x===b?' on':'')});
+  document.getElementById('p_sim').hidden=b.dataset.p!=='sim';document.getElementById('p_doc').hidden=b.dataset.p!=='doc';});});
+document.getElementById('bVer').addEventListener('click',verify);
+document.getElementById('bHelp').addEventListener('click',function(){var d=document.getElementById('help');if(d.showModal)d.showModal();else d.setAttribute('open','');});
+document.getElementById('bClose').addEventListener('click',function(){var d=document.getElementById('help');if(d.close)d.close();else d.removeAttribute('open');});
+buildControls();update();
+</script></body></html>
